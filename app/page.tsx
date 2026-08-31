@@ -161,10 +161,10 @@ export default function FoldersPage() {
           <h1 className="text-xl font-semibold">My Folders</h1>
           <button
             onClick={() => setShowSettings((s) => !s)}
-            className="text-white/80 hover:text-white p-1 -mr-1 transition-colors"
+            className="text-white/80 hover:text-white p-2 -mr-2 transition-colors"
             aria-label="Settings"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6">
               <path fillRule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .206 1.25l-1.18 2.045a1 1 0 0 1-1.187.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.206-1.25l1.18-2.045a1 1 0 0 1 1.187-.447l1.598.54A6.992 6.992 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
             </svg>
           </button>
@@ -331,7 +331,7 @@ export default function FoldersPage() {
                   <span className="truncate">{email}</span>
                   <button
                     onClick={() => handleRemoveShare(email)}
-                    className="text-ink-faint hover:text-danger transition-colors ml-2 flex-shrink-0"
+                    className="text-ink-faint hover:text-danger transition-colors p-1 -mr-1 ml-2 flex-shrink-0"
                     aria-label={`Remove ${email}`}
                   >
                     <XIcon />
@@ -412,11 +412,11 @@ function SortableFolderRow({
           </span>
         )}
       </Link>
-      <div className="flex items-center gap-1 pr-2">
+      <div className="flex items-center gap-1 pr-1">
         {isOwner && (
           <button
             onClick={onShare}
-            className="text-ink-faint hover:text-ink-soft transition-colors p-1"
+            className="text-ink-faint hover:text-ink-soft transition-colors p-2"
             aria-label="Share folder"
           >
             <ShareIcon />
@@ -424,7 +424,7 @@ function SortableFolderRow({
         )}
         <button
           onClick={onEdit}
-          className="text-ink-faint hover:text-ink-soft transition-colors p-1"
+          className="text-ink-faint hover:text-ink-soft transition-colors p-2"
           aria-label="Edit folder"
         >
           <EditIcon />
@@ -432,7 +432,7 @@ function SortableFolderRow({
         {isOwner && (
           <button
             onClick={onDelete}
-            className="text-ink-faint hover:text-danger transition-colors p-1"
+            className="text-ink-faint hover:text-danger transition-colors p-2"
             aria-label="Delete folder"
           >
             <TrashIcon />
@@ -499,7 +499,7 @@ function ModalButtons({
 
 function ShareIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
       <path d="M13 4.5a2.5 2.5 0 1 1 .702 1.737L6.97 9.604a2.518 2.518 0 0 1 0 .792l6.733 3.367a2.5 2.5 0 1 1-.671 1.341l-6.733-3.367a2.5 2.5 0 1 1 0-3.475l6.733-3.366A2.52 2.52 0 0 1 13 4.5Z" />
     </svg>
   )
@@ -507,7 +507,7 @@ function ShareIcon() {
 
 function XIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
       <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
     </svg>
   )
@@ -515,7 +515,7 @@ function XIcon() {
 
 function GripIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
       <circle cx="5.5" cy="3.5" r="1.2" />
       <circle cx="10.5" cy="3.5" r="1.2" />
       <circle cx="5.5" cy="8" r="1.2" />
@@ -528,7 +528,7 @@ function GripIcon() {
 
 function EditIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
       <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
       <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
     </svg>
@@ -537,7 +537,7 @@ function EditIcon() {
 
 function TrashIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6">
       <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clipRule="evenodd" />
     </svg>
   )
