@@ -36,25 +36,32 @@ import {
 import { enablePushNotifications } from '@/lib/push'
 import { useAuth } from '@/app/auth-provider'
 
-// <input type="datetime-local"> works in the browser's local time and wants
-// "YYYY-MM-DDTHH:mm" with no timezone — these convert to/from that shape.
-function toDatetimeLocalValue(date: Date) {
+// Reminders always fire in the evening — Vercel Cron on the Hobby plan only
+// allows one run per day, so there's no point offering a time picker.
+const ALARM_HOUR = 21
+
+// <input type="date"> wants "YYYY-MM-DD" in local time, with no timezone.
+function toDateInputValue(date: Date) {
   const pad = (n: number) => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
 function alarmToInputValue(alarmAt: Note['alarmAt']) {
-  return alarmAt ? toDatetimeLocalValue(alarmAt.toDate()) : ''
+  return alarmAt ? toDateInputValue(alarmAt.toDate()) : ''
+}
+
+// Converts a "YYYY-MM-DD" input value into the fixed 9pm reminder instant,
+// in the browser's local time zone.
+function dateInputToAlarm(value: string): Date | null {
+  if (!value) return null
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, month - 1, day, ALARM_HOUR, 0, 0)
 }
 
 function formatAlarm(alarmAt: Note['alarmAt']) {
   if (!alarmAt) return null
-  return alarmAt.toDate().toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
+  const date = alarmAt.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  return `${date}, evening`
 }
 
 export default function FolderPage({
@@ -185,7 +192,7 @@ export default function FolderPage({
     const title = newTitle.trim()
     if (!title) return
     setSaving(true)
-    const alarmAt = newAlarm ? new Date(newAlarm) : null
+    const alarmAt = dateInputToAlarm(newAlarm)
     if (alarmAt && user?.email) await enablePushNotifications(user.email)
     await addNote(folderId, title, newContent.trim(), alarmAt)
     setNewTitle('')
@@ -208,7 +215,7 @@ export default function FolderPage({
     const title = editTitle.trim()
     if (!title) return
     setSaving(true)
-    const alarmAt = editAlarm ? new Date(editAlarm) : null
+    const alarmAt = dateInputToAlarm(editAlarm)
     if (alarmAt && user?.email) await enablePushNotifications(user.email)
     await updateNote(folderId, editingNote.id, title, editContent.trim(), alarmAt)
     setEditingNote(null)
@@ -390,9 +397,9 @@ export default function FolderPage({
               rows={3}
               className="w-full border border-line rounded-lg px-3 py-2 text-sm text-ink outline-none focus:border-primary mb-2 resize-none"
             />
-            <label className="block text-xs font-medium text-ink-soft mb-1">Reminder (optional)</label>
+            <label className="block text-xs font-medium text-ink-soft mb-1">Remind me on (evening)</label>
             <input
-              type="datetime-local"
+              type="date"
               value={newAlarm}
               onChange={(e) => setNewAlarm(e.target.value)}
               className="w-full border border-line rounded-lg px-3 py-2 text-sm text-ink outline-none focus:border-primary mb-4"
@@ -424,10 +431,10 @@ export default function FolderPage({
               rows={3}
               className="w-full border border-line rounded-lg px-3 py-2 text-sm text-ink outline-none focus:border-primary mb-2 resize-none"
             />
-            <label className="block text-xs font-medium text-ink-soft mb-1">Reminder (optional)</label>
+            <label className="block text-xs font-medium text-ink-soft mb-1">Remind me on (evening)</label>
             <div className="flex gap-2 mb-4">
               <input
-                type="datetime-local"
+                type="date"
                 value={editAlarm}
                 onChange={(e) => setEditAlarm(e.target.value)}
                 className="flex-1 min-w-0 border border-line rounded-lg px-3 py-2 text-sm text-ink outline-none focus:border-primary"
