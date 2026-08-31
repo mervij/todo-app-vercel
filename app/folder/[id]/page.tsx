@@ -33,7 +33,29 @@ import {
   type Folder,
   type Note,
 } from '@/lib/firestore'
+import { enablePushNotifications } from '@/lib/push'
 import { useAuth } from '@/app/auth-provider'
+
+// <input type="datetime-local"> works in the browser's local time and wants
+// "YYYY-MM-DDTHH:mm" with no timezone — these convert to/from that shape.
+function toDatetimeLocalValue(date: Date) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+function alarmToInputValue(alarmAt: Note['alarmAt']) {
+  return alarmAt ? toDatetimeLocalValue(alarmAt.toDate()) : ''
+}
+
+function formatAlarm(alarmAt: Note['alarmAt']) {
+  if (!alarmAt) return null
+  return alarmAt.toDate().toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
 
 export default function FolderPage({
   params,
@@ -52,9 +74,11 @@ export default function FolderPage({
   const [showAddForm, setShowAddForm] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newContent, setNewContent] = useState('')
+  const [newAlarm, setNewAlarm] = useState('')
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editContent, setEditContent] = useState('')
+  const [editAlarm, setEditAlarm] = useState('')
   const [saving, setSaving] = useState(false)
 
   // selection + move + delete
@@ -161,9 +185,12 @@ export default function FolderPage({
     const title = newTitle.trim()
     if (!title) return
     setSaving(true)
-    await addNote(folderId, title, newContent.trim())
+    const alarmAt = newAlarm ? new Date(newAlarm) : null
+    if (alarmAt && user?.email) await enablePushNotifications(user.email)
+    await addNote(folderId, title, newContent.trim(), alarmAt)
     setNewTitle('')
     setNewContent('')
+    setNewAlarm('')
     setShowAddForm(false)
     setSaving(false)
   }
@@ -172,6 +199,7 @@ export default function FolderPage({
     setEditingNote(note)
     setEditTitle(note.title)
     setEditContent(note.content)
+    setEditAlarm(alarmToInputValue(note.alarmAt))
   }
 
   async function handleEditNote(e: { preventDefault(): void }) {
@@ -180,7 +208,9 @@ export default function FolderPage({
     const title = editTitle.trim()
     if (!title) return
     setSaving(true)
-    await updateNote(folderId, editingNote.id, title, editContent.trim())
+    const alarmAt = editAlarm ? new Date(editAlarm) : null
+    if (alarmAt && user?.email) await enablePushNotifications(user.email)
+    await updateNote(folderId, editingNote.id, title, editContent.trim(), alarmAt)
     setEditingNote(null)
     setSaving(false)
   }
@@ -343,7 +373,7 @@ export default function FolderPage({
 
       {/* ── add note modal ── */}
       {showAddForm && (
-        <Modal title="New Note" onClose={() => { setShowAddForm(false); setNewTitle(''); setNewContent('') }}>
+        <Modal title="New Note" onClose={() => { setShowAddForm(false); setNewTitle(''); setNewContent(''); setNewAlarm('') }}>
           <form onSubmit={handleAddNote}>
             <input
               autoFocus
@@ -358,10 +388,17 @@ export default function FolderPage({
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
               rows={3}
-              className="w-full border border-line rounded-lg px-3 py-2 text-sm text-ink outline-none focus:border-primary mb-4 resize-none"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm text-ink outline-none focus:border-primary mb-2 resize-none"
+            />
+            <label className="block text-xs font-medium text-ink-soft mb-1">Reminder (optional)</label>
+            <input
+              type="datetime-local"
+              value={newAlarm}
+              onChange={(e) => setNewAlarm(e.target.value)}
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm text-ink outline-none focus:border-primary mb-4"
             />
             <ModalButtons
-              onCancel={() => { setShowAddForm(false); setNewTitle(''); setNewContent('') }}
+              onCancel={() => { setShowAddForm(false); setNewTitle(''); setNewContent(''); setNewAlarm('') }}
               submitLabel={saving ? 'Adding…' : 'Add'}
               disabled={saving || !newTitle.trim()}
             />
@@ -385,8 +422,26 @@ export default function FolderPage({
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
               rows={3}
-              className="w-full border border-line rounded-lg px-3 py-2 text-sm text-ink outline-none focus:border-primary mb-4 resize-none"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm text-ink outline-none focus:border-primary mb-2 resize-none"
             />
+            <label className="block text-xs font-medium text-ink-soft mb-1">Reminder (optional)</label>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="datetime-local"
+                value={editAlarm}
+                onChange={(e) => setEditAlarm(e.target.value)}
+                className="flex-1 min-w-0 border border-line rounded-lg px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+              />
+              {editAlarm && (
+                <button
+                  type="button"
+                  onClick={() => setEditAlarm('')}
+                  className="px-3 rounded-lg border border-line text-sm text-ink-soft hover:bg-surface-muted"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <ModalButtons
               onCancel={() => setEditingNote(null)}
               submitLabel={saving ? 'Saving…' : 'Save'}
@@ -494,6 +549,9 @@ function SelectableNoteItem({
             {note.content}
           </p>
         )}
+        {formatAlarm(note.alarmAt) && (
+          <AlarmBadge label={formatAlarm(note.alarmAt)!} className="mt-1" />
+        )}
       </div>
     </li>
   )
@@ -549,6 +607,9 @@ function SortableNoteItem({
           <p className={`text-xs mt-0.5 ${note.completed ? 'text-ink-faint' : 'text-ink-soft'}`}>
             {note.content}
           </p>
+        )}
+        {formatAlarm(note.alarmAt) && (
+          <AlarmBadge label={formatAlarm(note.alarmAt)!} className="mt-1" />
         )}
       </div>
       <div className="flex items-center gap-1 pr-1 pt-1 flex-shrink-0">
@@ -621,6 +682,17 @@ function ModalButtons({
         {submitLabel}
       </button>
     </div>
+  )
+}
+
+function AlarmBadge({ label, className = '' }: { label: string; className?: string }) {
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px] font-medium text-primary ${className}`}>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+        <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .199.079.39.22.53l3.5 3.5a.75.75 0 1 0 1.06-1.06L10.75 9.69V5Z" clipRule="evenodd" />
+      </svg>
+      {label}
+    </span>
   )
 }
 

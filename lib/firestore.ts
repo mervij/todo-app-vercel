@@ -9,10 +9,11 @@ import {
   onSnapshot,
   query,
   serverTimestamp,
+  setDoc,
+  Timestamp,
   updateDoc,
   where,
   writeBatch,
-  type Timestamp,
 } from 'firebase/firestore'
 import { db } from './firebase'
 
@@ -33,6 +34,7 @@ export type Note = {
   completed: boolean
   order?: number
   createdAt: Timestamp | null
+  alarmAt: Timestamp | null
 }
 
 function sortByOrder<T extends { order?: number; createdAt: Timestamp | null }>(
@@ -173,7 +175,8 @@ export function subscribeNotes(
 export async function addNote(
   folderId: string,
   title: string,
-  content: string
+  content: string,
+  alarmAt: Date | null
 ) {
   await addDoc(collection(db, 'folders', folderId, 'notes'), {
     title,
@@ -181,6 +184,7 @@ export async function addNote(
     completed: false,
     order: Date.now(),
     createdAt: serverTimestamp(),
+    alarmAt: alarmAt ? Timestamp.fromDate(alarmAt) : null,
   })
 }
 
@@ -188,11 +192,13 @@ export async function updateNote(
   folderId: string,
   noteId: string,
   title: string,
-  content: string
+  content: string,
+  alarmAt: Date | null
 ) {
   await updateDoc(doc(db, 'folders', folderId, 'notes', noteId), {
     title,
     content,
+    alarmAt: alarmAt ? Timestamp.fromDate(alarmAt) : null,
   })
 }
 
@@ -239,6 +245,7 @@ export async function moveNotes(
       completed: note.completed,
       order: Date.now(),
       createdAt: serverTimestamp(),
+      alarmAt: note.alarmAt ?? null,
     })
     batch.delete(doc(db, 'folders', sourceFolderId, 'notes', noteId))
   }
@@ -247,4 +254,30 @@ export async function moveNotes(
 
 export async function deleteNote(folderId: string, noteId: string) {
   await deleteDoc(doc(db, 'folders', folderId, 'notes', noteId))
+}
+
+// Push subscriptions are keyed by a hash of their endpoint so re-subscribing
+// the same device/browser overwrites its old entry instead of duplicating it.
+async function subscriptionId(endpoint: string) {
+  const bytes = new TextEncoder().encode(endpoint)
+  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+export async function savePushSubscription(email: string, subscription: PushSubscriptionJSON) {
+  if (!subscription.endpoint || !subscription.keys) return
+  const id = await subscriptionId(subscription.endpoint)
+  await setDoc(doc(db, 'pushSubscriptions', id), {
+    email: email.trim().toLowerCase(),
+    endpoint: subscription.endpoint,
+    keys: subscription.keys,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export async function deletePushSubscription(endpoint: string) {
+  const id = await subscriptionId(endpoint)
+  await deleteDoc(doc(db, 'pushSubscriptions', id))
 }
